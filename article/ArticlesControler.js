@@ -54,28 +54,59 @@ router.get('/admin/articles/edit/:id',(req,res)=>{
     }
     Article.findByPk(id).then(article=>{
         if(article != undefined){
-            res.render('admin/articles/edit',{article: article})
+            Category.findAll().then(categories => {
+                res.render('admin/articles/edit',{article: article, categories: categories})
+            })
+            
         } else {
-            res.redirect('/admin/articles')
+            res.redirect('/')
         }
     }).catch(error=>{
-        res.redirect('/admin/articles')
+        res.redirect('/')
     })
     
 })
-
-
 router.post('/articles/update', (req,res)=>{
     let id = req.body.id;
     let title = req.body.title;
     let body = req.body.body;
     let category = req.body.category;
-    Article.update({title : title, slug: slugify(title), body: body, category : category},{
+    Article.update({
+        title: title, body: body, categoryId : category, slug: slugify(title)},{
         where: {
             id : id
         }
     }).then(()=>{
         res.redirect('/admin/articles')
+    }).catch(err => {
+        res.redirect('/')
+    })
+})
+router.get("/articles/page/:num",(req,res)=>{
+    let page = req.params.num;
+    let offset = 0;
+    if (isNaN(page)||(page == 0)){
+        offset = 0
+    } else {
+        offset = parseInt(page)*4;
+    }
+    Article.findAndCountAll({
+        offset: offset,
+        limit : 4,
+        order:[
+            ['id','DESC']
+        ]
+    }).then(articles => {
+        let next;
+        offset + 4 >= articles.count ? next = false: next = true;
+        let result = {
+            page: parseInt(page),
+            next : next,
+            articles : articles
+        }
+        Category.findAll().then(categories =>{
+            res.render('admin/articles/pages', {result: result, categories: categories})
+        })    
     })
 })
 module.exports = router;

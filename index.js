@@ -4,11 +4,22 @@ const app = express();
 const bodyParser = require('body-parser');
 const port = 3002;
 const connection = require('./database/database');
-const categoriesController = require('./categories/CategoriesControler')
-const articlesController = require('./article/ArticlesControler')
 
 const Article = require('./article/Article');
 const Category = require('./categories/Category')
+const categoriesController = require('./categories/CategoriesControler')
+const articlesController = require('./article/ArticlesControler')
+
+
+//conexao com o banco
+connection
+    .authenticate()
+    .then(()=>{
+        console.log('Conexão feita com sucesso!')
+    }).catch((error)=>{
+        console.log(error);
+    })
+
 //config
 app.set('view engine','ejs');
 app.use(bodyParser.urlencoded({extended: false}));
@@ -18,14 +29,8 @@ app.use(express.static('public'));
 app.listen(port, ()=>{
     console.log(`O servidor esta rodando! Na porta ${port}`);
 });
-//conexao com o banco
-connection
-    .authenticate()
-    .then(()=>{
-        console.log('Conexão feita com sucesso!')
-    }).catch((error)=>{
-        console.log(error);
-    })
+
+
 //rotas
 app.use('/',categoriesController)
 app.use('/',articlesController)
@@ -33,7 +38,8 @@ app.get('/',(req,res)=>{
     Article.findAll({
         order:[
             ['id','DESC']
-        ]
+        ],
+        limit: 4
     }).then(articles=>{
         Category.findAll().then(categories=>{
             res.render('index.ejs', {articles:articles, categories: categories})
